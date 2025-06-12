@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { StockCard } from './components/StockCard';
 import { StockAnalysis } from './components/StockAnalysis';
+import { StockChart } from './components/StockChart';
 import { useStocks } from './hooks/useStocks';
 
 console.log('App component is being loaded');
@@ -82,7 +83,7 @@ const App: React.FC = () => {
             AI Stock Analyzer
           </Typography>
           <Typography variant="h5" align="center" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} gutterBottom>
-            Top 10 AI Companies to Watch in 2025
+            Top AI Companies to Watch in 2025
           </Typography>
         </Box>
 
@@ -97,45 +98,49 @@ const App: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={selectedStock ? 6 : 12}>
-              <Grid container spacing={2}>
-                {Array.isArray(stocks) && stocks.length > 0 ? (
-                  stocks.map((stock) => (
-                    <Grid item xs={12} sm={selectedStock ? 12 : 6} key={stock.symbol}>
-                      <StockCard
-                        stock={stock}
-                        onClick={() => selectStock(stock.symbol)}
-                      />
+          <>
+            <StockChart stocks={stocks} />
+            
+            <Grid container spacing={4} sx={{ mt: 2 }}>
+              <Grid item xs={12} md={selectedStock ? 6 : 12}>
+                <Grid container spacing={2}>
+                  {Array.isArray(stocks) && stocks.length > 0 ? (
+                    stocks.map((stock) => (
+                      <Grid item xs={12} sm={selectedStock ? 12 : 6} key={stock.symbol}>
+                        <StockCard
+                          stock={stock}
+                          onClick={() => selectStock(stock.symbol)}
+                        />
+                      </Grid>
+                    ))
+                  ) : !loading && !error ? (
+                    <Grid item xs={12}>
+                      <Alert severity="info">No stocks data available</Alert>
                     </Grid>
-                  ))
-                ) : !loading && !error ? (
-                  <Grid item xs={12}>
-                    <Alert severity="info">No stocks data available</Alert>
-                  </Grid>
-                ) : null}
+                  ) : null}
+                </Grid>
               </Grid>
-            </Grid>
 
-            {selectedStock && stockAnalysis && (
-              <Grid item xs={12} md={6}>
-                <Paper 
-                  sx={{ 
-                    p: 2,
-                    position: 'sticky',
-                    top: 20,
-                    maxHeight: 'calc(100vh - 40px)',
-                    overflow: 'auto'
-                  }}
-                >
-                  <Typography variant="h5" gutterBottom>
-                    {stocks.find(s => s.symbol === selectedStock)?.name} Analysis
-                  </Typography>
-                  <StockAnalysis analysis={stockAnalysis} />
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
+              {selectedStock && stockAnalysis && (
+                <Grid item xs={12} md={6}>
+                  <Paper 
+                    sx={{ 
+                      p: 2,
+                      position: 'sticky',
+                      top: 20,
+                      maxHeight: 'calc(100vh - 40px)',
+                      overflow: 'auto'
+                    }}
+                  >
+                    <Typography variant="h5" gutterBottom>
+                      {stocks.find(s => s.symbol === selectedStock)?.name} Analysis
+                    </Typography>
+                    <StockAnalysis analysis={stockAnalysis} />
+                  </Paper>
+                </Grid>
+              )}
+            </Grid>
+          </>
         )}
       </Container>
     </ThemeProvider>
