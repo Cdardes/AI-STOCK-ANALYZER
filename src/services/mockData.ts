@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { StockData } from '../types/stock';
 
-const mockStocks: StockData[] = [
+export const mockStocks: StockData[] = [
   {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -88,27 +87,48 @@ const mockStocks: StockData[] = [
   }
 ];
 
-export const useStocks = () => {
-  const [stocks, setStocks] = useState<StockData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const mockSectors = [
+  {
+    name: 'Technology',
+    performance: 2.5,
+    topStocks: ['AAPL', 'MSFT', 'GOOGL']
+  },
+  {
+    name: 'Healthcare',
+    performance: 1.2,
+    topStocks: ['JNJ', 'PFE', 'UNH']
+  },
+  {
+    name: 'Finance',
+    performance: -0.8,
+    topStocks: ['JPM', 'BAC', 'WFC']
+  },
+  {
+    name: 'Energy',
+    performance: -1.5,
+    topStocks: ['XOM', 'CVX', 'COP']
+  }
+];
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchStocks = async () => {
-      try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setStocks(mockStocks);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch stocks');
-        setLoading(false);
-      }
-    };
-
-    fetchStocks();
-  }, []);
-
-  return { stocks, loading, error };
-}; 
+export const mockNews = [
+  {
+    id: '1',
+    title: 'Tech Stocks Rally on AI Boom',
+    summary: 'Technology stocks surge as artificial intelligence continues to drive market growth and innovation.',
+    source: 'Financial Times',
+    date: '2024-03-20',
+    imageUrl: 'https://source.unsplash.com/random/800x400?technology',
+    url: 'https://www.ft.com/',
+    category: 'Technology'
+  },
+  {
+    id: '2',
+    title: 'Federal Reserve Signals Rate Cut',
+    summary: 'The Federal Reserve hints at potential interest rate cuts in response to economic indicators.',
+    source: 'Reuters',
+    date: '2024-03-19',
+    imageUrl: 'https://source.unsplash.com/random/800x400?finance',
+    url: 'https://www.reuters.com/',
+    category: 'Economy'
+  }
+]; 

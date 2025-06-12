@@ -5,70 +5,55 @@ import {
   Typography,
   Box,
   Chip,
+  Grid,
   IconButton,
   Tooltip,
-  LinearProgress,
-  Grid
 } from '@mui/material';
 import {
   TrendingUp,
   TrendingDown,
   Info as InfoIcon,
-  ShowChart as ChartIcon
+  ShowChart as ChartIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
 import { StockData } from '../types/stock';
 
 interface StockCardProps {
   stock: StockData;
   onClick: () => void;
+  onAddToWatchlist: (symbol: string) => void;
+  onRemoveFromWatchlist: (symbol: string) => void;
+  isInWatchlist: boolean;
 }
 
-const metricDefinitions = {
-  aiScore: "AI Score (0-10): Measures the company's AI capabilities based on R&D investment, patents, market share, revenue growth, and AI adoption rate.",
-  growthScore: "Growth Score (0-10): Indicates the company's growth potential based on revenue growth and market expansion.",
-  riskScore: "Risk Score (0-10): Evaluates investment risk based on market volatility, competition, and company stability. Lower is better.",
-  peRatio: "P/E Ratio: Price-to-Earnings ratio. Measures stock valuation relative to earnings. Lower may indicate better value.",
-  marketCap: "Market Cap: Total market value of the company's shares. Indicates company size and market presence.",
-  recommendation: "Recommendation: Analyst consensus on whether to buy, hold, or sell the stock.",
-  predictedPrice: "Predicted Price: Estimated future stock price based on growth projections and market analysis."
-};
-
-export const StockCard: React.FC<StockCardProps> = ({ stock, onClick }) => {
+export const StockCard: React.FC<StockCardProps> = ({
+  stock,
+  onClick,
+  onAddToWatchlist,
+  onRemoveFromWatchlist,
+  isInWatchlist,
+}) => {
   const priceChange = stock.price - stock.previousClose;
   const priceChangePercent = (priceChange / stock.previousClose) * 100;
   const isPositive = priceChange >= 0;
 
-  const getScoreColor = (score: number) => {
-    if (score >= 7) return 'success';
-    if (score >= 4) return 'warning';
-    return 'error';
-  };
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(num);
-  };
-
-  const formatMarketCap = (marketCap: number) => {
-    if (marketCap >= 1e12) return `${(marketCap / 1e12).toFixed(2)}T`;
-    if (marketCap >= 1e9) return `${(marketCap / 1e9).toFixed(2)}B`;
-    if (marketCap >= 1e6) return `${(marketCap / 1e6).toFixed(2)}M`;
-    return `${marketCap.toFixed(2)}`;
+  const handleWatchlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInWatchlist) {
+      onRemoveFromWatchlist(stock.symbol);
+    } else {
+      onAddToWatchlist(stock.symbol);
+    }
   };
 
   return (
     <Card
       sx={{
         cursor: 'pointer',
-        transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: 4
-        }
+          boxShadow: 6,
+        },
       }}
       onClick={onClick}
     >
@@ -120,36 +105,53 @@ export const StockCard: React.FC<StockCardProps> = ({ stock, onClick }) => {
 
         <Box mt={2}>
           <Typography variant="body2" color="textSecondary" gutterBottom>
-            AI Score
+            AI Analysis
           </Typography>
-          <Box display="flex" alignItems="center">
-            <LinearProgress
-              variant="determinate"
-              value={stock.aiScore * 10}
+          <Box display="flex" gap={1}>
+            <Chip
+              label={`AI Score: ${stock.aiScore}`}
+              size="small"
               color="primary"
-              sx={{ flexGrow: 1, mr: 1 }}
             />
-            <Typography variant="body2">
-              {stock.aiScore.toFixed(1)}
-            </Typography>
+            <Chip
+              label={`Growth: ${stock.growthScore}`}
+              size="small"
+              color="success"
+            />
+            <Chip
+              label={`Risk: ${stock.riskScore}`}
+              size="small"
+              color="warning"
+            />
           </Box>
         </Box>
 
         <Box mt={2} display="flex" justifyContent="space-between">
-          <Tooltip title="View Analysis">
-            <IconButton size="small" onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}>
-              <InfoIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="View Chart">
-            <IconButton size="small" onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-            }}>
-              <ChartIcon />
+          <Box>
+            <Tooltip title="View Analysis">
+              <IconButton size="small" onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}>
+                <InfoIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="View Chart">
+              <IconButton size="small" onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}>
+                <ChartIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Tooltip title={isInWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}>
+            <IconButton
+              size="small"
+              onClick={handleWatchlistClick}
+              color={isInWatchlist ? "primary" : "default"}
+            >
+              {isInWatchlist ? <StarIcon /> : <StarBorderIcon />}
             </IconButton>
           </Tooltip>
         </Box>
