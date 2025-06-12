@@ -1,149 +1,146 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Grid,
   Typography,
   Box,
-  CircularProgress,
-  Alert,
-  Paper,
-  ThemeProvider,
-  createTheme,
-  CssBaseline
+  AppBar,
+  Toolbar,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider
 } from '@mui/material';
+import { Menu as MenuIcon, Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
 import { StockCard } from './components/StockCard';
-import { StockAnalysis } from './components/StockAnalysis';
 import { StockChart } from './components/StockChart';
+import { EnhancedStockAnalysis } from './components/EnhancedStockAnalysis';
 import { useStocks } from './hooks/useStocks';
+import { getEnhancedStockMetrics } from './services/enhancedStockService';
+import { StockData } from './types/stock';
 
 console.log('App component is being loaded');
-
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#2196f3',
-    },
-    secondary: {
-      main: '#f50057',
-    },
-    background: {
-      default: '#121212',
-      paper: '#1e1e1e',
-    },
-  },
-  typography: {
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 600,
-    },
-    h5: {
-      fontWeight: 500,
-    },
-    h6: {
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          background: 'linear-gradient(145deg, #1e1e1e 0%, #2a2a2a 100%)',
-        },
-      },
-    },
-  },
-});
 
 const App: React.FC = () => {
   console.log('App component rendering');
 
-  const {
-    stocks,
-    loading,
-    error,
-    selectedStock,
-    stockAnalysis,
-    selectStock,
-  } = useStocks();
+  const { stocks, loading, error } = useStocks();
+  const [selectedStock, setSelectedStock] = useState<StockData | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    console.log('App mounted');
-    console.log('Current state:', { stocks, loading, error, selectedStock });
-  }, [stocks, loading, error, selectedStock]);
+  const handleStockClick = (stock: StockData) => {
+    setSelectedStock(stock);
+  };
 
-  console.log('Rendering with state:', { stocks, loading, error, selectedStock });
+  const handleAddToWatchlist = (symbol: string) => {
+    setWatchlist(prev => [...prev, symbol]);
+  };
+
+  const handleRemoveFromWatchlist = (symbol: string) => {
+    setWatchlist(prev => prev.filter(s => s !== symbol));
+  };
+
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  if (loading) return <Typography>Loading...</Typography>;
+  if (error) return <Typography color="error">{error}</Typography>;
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box mb={4} sx={{ color: 'white' }}>
-          <Typography variant="h1" gutterBottom align="center" sx={{ color: 'white' }}>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={toggleDrawer}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             AI Stock Analyzer
           </Typography>
-          <Typography variant="h5" align="center" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} gutterBottom>
-            Top AI Companies to Watch in 2025
-          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer}
+      >
+        <Box sx={{ width: 250 }}>
+          <List>
+            <ListItem>
+              <Typography variant="h6">Watchlist</Typography>
+            </ListItem>
+            <Divider />
+            {watchlist.map(symbol => {
+              const stock = stocks.find(s => s.symbol === symbol);
+              return stock ? (
+                <ListItem
+                  key={symbol}
+                  button
+                  onClick={() => {
+                    handleStockClick(stock);
+                    toggleDrawer();
+                  }}
+                >
+                  <ListItemIcon>
+                    <StarIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText primary={stock.symbol} secondary={stock.name} />
+                </ListItem>
+              ) : null;
+            })}
+          </List>
         </Box>
+      </Drawer>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 4 }}>
-            {error}
-          </Alert>
-        )}
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Typography variant="h4" gutterBottom>
+              Stock Analysis Dashboard
+            </Typography>
+          </Grid>
 
-        {loading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            <StockChart stocks={stocks} />
-            
-            <Grid container spacing={4} sx={{ mt: 2 }}>
-              <Grid item xs={12} md={selectedStock ? 6 : 12}>
-                <Grid container spacing={2}>
-                  {Array.isArray(stocks) && stocks.length > 0 ? (
-                    stocks.map((stock) => (
-                      <Grid item xs={12} sm={selectedStock ? 12 : 6} key={stock.symbol}>
-                        <StockCard
-                          stock={stock}
-                          onClick={() => selectStock(stock.symbol)}
-                        />
-                      </Grid>
-                    ))
-                  ) : !loading && !error ? (
-                    <Grid item xs={12}>
-                      <Alert severity="info">No stocks data available</Alert>
-                    </Grid>
-                  ) : null}
+          <Grid item xs={12} md={8}>
+            <Grid container spacing={2}>
+              {stocks.map(stock => (
+                <Grid item xs={12} sm={6} key={stock.symbol}>
+                  <StockCard
+                    stock={stock}
+                    onClick={() => handleStockClick(stock)}
+                  />
                 </Grid>
-              </Grid>
-
-              {selectedStock && stockAnalysis && (
-                <Grid item xs={12} md={6}>
-                  <Paper 
-                    sx={{ 
-                      p: 2,
-                      position: 'sticky',
-                      top: 20,
-                      maxHeight: 'calc(100vh - 40px)',
-                      overflow: 'auto'
-                    }}
-                  >
-                    <Typography variant="h5" gutterBottom>
-                      {stocks.find(s => s.symbol === selectedStock)?.name} Analysis
-                    </Typography>
-                    <StockAnalysis analysis={stockAnalysis} />
-                  </Paper>
-                </Grid>
-              )}
+              ))}
             </Grid>
-          </>
-        )}
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <StockChart stocks={stocks} />
+          </Grid>
+
+          {selectedStock && (
+            <Grid item xs={12}>
+              <EnhancedStockAnalysis
+                stock={selectedStock}
+                metrics={getEnhancedStockMetrics(selectedStock.symbol)}
+                onAddToWatchlist={handleAddToWatchlist}
+                onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                isInWatchlist={watchlist.includes(selectedStock.symbol)}
+              />
+            </Grid>
+          )}
+        </Grid>
       </Container>
-    </ThemeProvider>
+    </Box>
   );
 };
 

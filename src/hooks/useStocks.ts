@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StockData, StockAnalysis } from '../types/stock';
 import { stockService } from '../services/stockService';
+import { getTopAIStocks } from '../services/stockService';
 
 export const useStocks = () => {
   console.log('useStocks hook initializing');
@@ -27,13 +28,13 @@ export const useStocks = () => {
     try {
       console.log('Starting to fetch stocks');
       setLoading(true);
-      const data = await stockService.getTopAIStocks();
+      const data = await getTopAIStocks();
       console.log('Received stock data:', data);
       setStocks(data);
       setError(null);
     } catch (err) {
       console.error('Error in fetchStocks:', err);
-      setError('Failed to fetch stock data');
+      setError(err instanceof Error ? err.message : 'Failed to fetch stocks');
     } finally {
       setLoading(false);
     }

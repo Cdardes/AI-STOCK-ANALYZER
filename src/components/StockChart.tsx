@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
   Paper,
   Typography,
+  Box,
   FormControl,
   InputLabel,
   Select,
@@ -36,59 +36,67 @@ interface StockChartProps {
   stocks: StockData[];
 }
 
-type MetricType = 'aiScore' | 'growthScore' | 'riskScore' | 'peRatio' | 'marketCap';
-
-const metricLabels: Record<MetricType, string> = {
-  aiScore: 'AI Score',
-  growthScore: 'Growth Score',
-  riskScore: 'Risk Score',
-  peRatio: 'P/E Ratio',
-  marketCap: 'Market Cap (Billions)'
-};
+type MetricType = 'aiScore' | 'growthScore' | 'riskScore' | 'price' | 'marketCap' | 'volume';
 
 export const StockChart: React.FC<StockChartProps> = ({ stocks }) => {
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('aiScore');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [metric, setMetric] = useState<MetricType>('aiScore');
 
   const handleMetricChange = (event: SelectChangeEvent) => {
-    setSelectedMetric(event.target.value as MetricType);
+    setMetric(event.target.value as MetricType);
   };
 
-  const handleSortChange = (event: SelectChangeEvent) => {
-    setSortOrder(event.target.value as 'asc' | 'desc');
+  const getMetricLabel = (metric: MetricType): string => {
+    switch (metric) {
+      case 'aiScore': return 'AI Score';
+      case 'growthScore': return 'Growth Score';
+      case 'riskScore': return 'Risk Score';
+      case 'price': return 'Price ($)';
+      case 'marketCap': return 'Market Cap ($B)';
+      case 'volume': return 'Volume (M)';
+      default: return metric;
+    }
   };
 
-  const chartData = useMemo(() => {
-    const sortedStocks = [...stocks].sort((a, b) => {
-      const valueA = selectedMetric === 'marketCap' 
-        ? a[selectedMetric] / 1e9 
-        : a[selectedMetric];
-      const valueB = selectedMetric === 'marketCap' 
-        ? b[selectedMetric] / 1e9 
-        : b[selectedMetric];
-      
-      return sortOrder === 'desc' ? valueB - valueA : valueA - valueB;
-    });
+  const formatValue = (value: number, metric: MetricType): number => {
+    switch (metric) {
+      case 'marketCap': return value / 1e9;
+      case 'volume': return value / 1e6;
+      default: return value;
+    }
+  };
 
-    const data: ChartData<'bar'> = {
-      labels: sortedStocks.map(stock => stock.symbol),
-      datasets: [
-        {
-          label: metricLabels[selectedMetric],
-          data: sortedStocks.map(stock => 
-            selectedMetric === 'marketCap' 
-              ? stock[selectedMetric] / 1e9 
-              : stock[selectedMetric]
-          ),
-          backgroundColor: 'rgba(33, 150, 243, 0.6)',
-          borderColor: 'rgba(33, 150, 243, 1)',
-          borderWidth: 1,
-        },
-      ],
-    };
-
-    return data;
-  }, [stocks, selectedMetric, sortOrder]);
+  const data: ChartData<'bar'> = {
+    labels: stocks.map(stock => stock.symbol),
+    datasets: [
+      {
+        label: getMetricLabel(metric),
+        data: stocks.map(stock => formatValue(stock[metric], metric)),
+        backgroundColor: stocks.map(stock => {
+          const value = stock[metric];
+          if (metric === 'riskScore') {
+            return value > 7 ? 'rgba(255, 99, 132, 0.8)' :
+                   value > 4 ? 'rgba(255, 206, 86, 0.8)' :
+                   'rgba(75, 192, 192, 0.8)';
+          }
+          return value > 8 ? 'rgba(75, 192, 192, 0.8)' :
+                 value > 6 ? 'rgba(255, 206, 86, 0.8)' :
+                 'rgba(255, 99, 132, 0.8)';
+        }),
+        borderColor: stocks.map(stock => {
+          const value = stock[metric];
+          if (metric === 'riskScore') {
+            return value > 7 ? 'rgb(255, 99, 132)' :
+                   value > 4 ? 'rgb(255, 206, 86)' :
+                   'rgb(75, 192, 192)';
+          }
+          return value > 8 ? 'rgb(75, 192, 192)' :
+                 value > 6 ? 'rgb(255, 206, 86)' :
+                 'rgb(255, 99, 132)';
+        }),
+        borderWidth: 1
+      }
+    ]
+  };
 
   const options = {
     responsive: true,
@@ -98,17 +106,28 @@ export const StockChart: React.FC<StockChartProps> = ({ stocks }) => {
       },
       title: {
         display: true,
-        text: `Stock Comparison - ${metricLabels[selectedMetric]}`,
+        text: `Stock Comparison - ${getMetricLabel(metric)}`,
+        font: {
+          size: 16
+        }
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: (context: any) => {
             const value = context.raw;
-            return `${metricLabels[selectedMetric]}: ${
-              selectedMetric === 'marketCap' 
-                ? `$${value.toFixed(2)}B` 
-                : value.toFixed(2)
-            }`;
+            const stock = stocks[context.dataIndex];
+            let label = `${stock.name} (${stock.symbol}): `;
+            
+            switch (metric) {
+              case 'marketCap':
+                return `${label}$${value.toFixed(2)}B`;
+              case 'volume':
+                return `${label}${value.toFixed(2)}M`;
+              case 'price':
+                return `${label}$${value.toFixed(2)}`;
+              default:
+                return `${label}${value.toFixed(1)}`;
+            }
           }
         }
       }
@@ -118,53 +137,43 @@ export const StockChart: React.FC<StockChartProps> = ({ stocks }) => {
         beginAtZero: true,
         title: {
           display: true,
-          text: metricLabels[selectedMetric]
+          text: getMetricLabel(metric)
         }
       }
     }
   };
 
   return (
-    <Paper sx={{ p: 3, mt: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Stock Comparison Chart
-      </Typography>
-      
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
+    <Paper sx={{ p: 2 }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Typography variant="h6" gutterBottom>
+            Stock Comparison
+          </Typography>
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl fullWidth size="small">
             <InputLabel>Metric</InputLabel>
             <Select
-              value={selectedMetric}
+              value={metric}
               label="Metric"
               onChange={handleMetricChange}
             >
               <MenuItem value="aiScore">AI Score</MenuItem>
               <MenuItem value="growthScore">Growth Score</MenuItem>
               <MenuItem value="riskScore">Risk Score</MenuItem>
-              <MenuItem value="peRatio">P/E Ratio</MenuItem>
+              <MenuItem value="price">Price</MenuItem>
               <MenuItem value="marketCap">Market Cap</MenuItem>
+              <MenuItem value="volume">Volume</MenuItem>
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>Sort Order</InputLabel>
-            <Select
-              value={sortOrder}
-              label="Sort Order"
-              onChange={handleSortChange}
-            >
-              <MenuItem value="desc">Highest to Lowest</MenuItem>
-              <MenuItem value="asc">Lowest to Highest</MenuItem>
-            </Select>
-          </FormControl>
+        <Grid item xs={12}>
+          <Box sx={{ height: 400 }}>
+            <Bar data={data} options={options} />
+          </Box>
         </Grid>
       </Grid>
-
-      <Box sx={{ height: 400 }}>
-        <Bar data={chartData} options={options} />
-      </Box>
     </Paper>
   );
 }; 

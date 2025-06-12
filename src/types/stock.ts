@@ -2,6 +2,7 @@ export interface StockData {
   symbol: string;
   name: string;
   price: number;
+  previousClose: number;
   marketCap: number;
   peRatio: number;
   yearHigh: number;

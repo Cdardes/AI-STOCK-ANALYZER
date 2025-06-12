@@ -1,198 +1,198 @@
 import { StockData, StockAnalysis } from '../types/stock';
 
 // Mock data for AI stocks
-const MOCK_STOCKS = [
+const MOCK_STOCKS: StockData[] = [
   {
     symbol: 'NVDA',
     name: 'NVIDIA Corporation',
-    currentPrice: '850.02',
-    marketCap: '2100',
-    peRatio: '75.5',
-    yearHigh: '974.00',
-    yearLow: '378.80',
-    volume: '50000000',
+    price: 850.02,
+    previousClose: 845.50,
+    marketCap: 2.1e12,
+    peRatio: 75.5,
+    yearHigh: 974.00,
+    yearLow: 378.80,
+    volume: 50000000,
+    aiScore: 9.5,
+    growthScore: 9.0,
+    riskScore: 5.5,
+    recommendation: 'Strong Buy',
+    predictedPrice: 1000.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '8000',
-      patentCount: '2000',
-      marketShare: '85',
-      revenueGrowth: '265',
-      aiAdoption: '0.95'
-    },
-    analysis: {
-      strengths: ['Market leader in AI chips', 'Strong R&D pipeline', 'High demand for AI solutions'],
-      weaknesses: ['High valuation', 'Supply chain constraints', 'Competition from AMD'],
-      opportunities: ['AI boom', 'Cloud computing growth', 'Autonomous vehicles'],
-      threats: ['Geopolitical risks', 'Market volatility', 'Regulatory challenges']
-    },
-    recommendation: 'Strong Buy'
+      rndInvestment: 8000,
+      patentCount: 2000,
+      marketShare: 85,
+      revenueGrowth: 265,
+      aiAdoption: 0.95
+    }
   },
   {
     symbol: 'MSFT',
     name: 'Microsoft Corporation',
-    currentPrice: '415.32',
-    marketCap: '3100',
-    peRatio: '35.8',
-    yearHigh: '420.82',
-    yearLow: '275.37',
-    volume: '25000000',
+    price: 415.32,
+    previousClose: 410.25,
+    marketCap: 3.1e12,
+    peRatio: 35.8,
+    yearHigh: 420.82,
+    yearLow: 275.37,
+    volume: 25000000,
+    aiScore: 9.2,
+    growthScore: 8.5,
+    riskScore: 3.8,
+    recommendation: 'Buy',
+    predictedPrice: 450.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '25000',
-      patentCount: '5000',
-      marketShare: '75',
-      revenueGrowth: '15',
-      aiAdoption: '0.90'
-    },
-    analysis: {
-      strengths: ['Cloud leadership', 'Strong AI integration', 'Diverse product portfolio'],
-      weaknesses: ['Slower growth in some segments', 'High competition', 'Regulatory scrutiny'],
-      opportunities: ['AI services growth', 'Enterprise cloud adoption', 'Gaming expansion'],
-      threats: ['Cloud competition', 'Economic slowdown', 'Privacy regulations']
-    },
-    recommendation: 'Buy'
+      rndInvestment: 25000,
+      patentCount: 5000,
+      marketShare: 75,
+      revenueGrowth: 15,
+      aiAdoption: 0.90
+    }
   },
   {
     symbol: 'GOOGL',
     name: 'Alphabet Inc.',
-    currentPrice: '142.56',
-    marketCap: '1800',
-    peRatio: '24.5',
-    yearHigh: '155.20',
-    yearLow: '115.00',
-    volume: '30000000',
+    price: 142.56,
+    previousClose: 141.20,
+    marketCap: 1.8e12,
+    peRatio: 24.5,
+    yearHigh: 155.20,
+    yearLow: 115.00,
+    volume: 30000000,
+    aiScore: 9.0,
+    growthScore: 8.2,
+    riskScore: 4.0,
+    recommendation: 'Buy',
+    predictedPrice: 160.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '30000',
-      patentCount: '4000',
-      marketShare: '70',
-      revenueGrowth: '12',
-      aiAdoption: '0.85'
-    },
-    analysis: {
-      strengths: ['AI leadership', 'Strong ad revenue', 'Cloud growth'],
-      weaknesses: ['Regulatory challenges', 'Privacy concerns', 'Competition in AI'],
-      opportunities: ['AI services', 'Cloud expansion', 'New AI products'],
-      threats: ['Regulatory pressure', 'Ad market slowdown', 'AI competition']
-    },
-    recommendation: 'Buy'
+      rndInvestment: 30000,
+      patentCount: 4000,
+      marketShare: 70,
+      revenueGrowth: 12,
+      aiAdoption: 0.85
+    }
   },
   {
     symbol: 'AMD',
     name: 'Advanced Micro Devices',
-    currentPrice: '178.72',
-    marketCap: '288',
-    peRatio: '45.2',
-    yearHigh: '184.92',
-    yearLow: '60.05',
-    volume: '45000000',
+    price: 178.72,
+    previousClose: 175.50,
+    marketCap: 2.88e11,
+    peRatio: 45.2,
+    yearHigh: 184.92,
+    yearLow: 60.05,
+    volume: 45000000,
+    aiScore: 8.6,
+    growthScore: 8.1,
+    riskScore: 5.0,
+    recommendation: 'Buy',
+    predictedPrice: 200.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '5000',
-      patentCount: '1500',
-      marketShare: '25',
-      revenueGrowth: '45',
-      aiAdoption: '0.80'
-    },
-    analysis: {
-      strengths: ['Strong product portfolio', 'Competitive pricing', 'Growing market share'],
-      weaknesses: ['Smaller R&D budget', 'Supply chain dependency', 'Lower margins'],
-      opportunities: ['AI chip market', 'Data center growth', 'Gaming expansion'],
-      threats: ['NVIDIA competition', 'Market volatility', 'Supply chain risks']
-    },
-    recommendation: 'Buy'
+      rndInvestment: 5000,
+      patentCount: 1500,
+      marketShare: 25,
+      revenueGrowth: 45,
+      aiAdoption: 0.80
+    }
   },
   {
     symbol: 'META',
     name: 'Meta Platforms',
-    currentPrice: '485.58',
-    marketCap: '1250',
-    peRatio: '32.4',
-    yearHigh: '490.00',
-    yearLow: '88.09',
-    volume: '20000000',
+    price: 485.58,
+    previousClose: 480.25,
+    marketCap: 1.25e12,
+    peRatio: 32.4,
+    yearHigh: 490.00,
+    yearLow: 88.09,
+    volume: 20000000,
+    aiScore: 8.8,
+    growthScore: 8.0,
+    riskScore: 4.5,
+    recommendation: 'Buy',
+    predictedPrice: 550.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '35000',
-      patentCount: '3000',
-      marketShare: '65',
-      revenueGrowth: '25',
-      aiAdoption: '0.88'
-    },
-    analysis: {
-      strengths: ['AI research leadership', 'Strong ad platform', 'Metaverse potential'],
-      weaknesses: ['Privacy concerns', 'Regulatory scrutiny', 'High R&D costs'],
-      opportunities: ['AI integration', 'Metaverse development', 'Business solutions'],
-      threats: ['Regulatory pressure', 'Competition', 'Privacy regulations']
-    },
-    recommendation: 'Buy'
+      rndInvestment: 35000,
+      patentCount: 3000,
+      marketShare: 65,
+      revenueGrowth: 25,
+      aiAdoption: 0.88
+    }
   },
   {
     symbol: 'PLTR',
     name: 'Palantir Technologies',
-    currentPrice: '24.56',
-    marketCap: '52',
-    peRatio: 'N/A',
-    yearHigh: '27.50',
-    yearLow: '7.50',
-    volume: '35000000',
+    price: 24.56,
+    previousClose: 24.20,
+    marketCap: 5.2e10,
+    peRatio: 0,
+    yearHigh: 27.50,
+    yearLow: 7.50,
+    volume: 35000000,
+    aiScore: 8.5,
+    growthScore: 7.8,
+    riskScore: 6.0,
+    recommendation: 'Hold',
+    predictedPrice: 30.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '2000',
-      patentCount: '800',
-      marketShare: '15',
-      revenueGrowth: '35',
-      aiAdoption: '0.75'
-    },
-    analysis: {
-      strengths: ['AI/ML expertise', 'Government contracts', 'Data analytics leadership'],
-      weaknesses: ['High valuation', 'Customer concentration', 'Profitability concerns'],
-      opportunities: ['AI platform growth', 'Commercial expansion', 'New markets'],
-      threats: ['Competition', 'Contract risks', 'Market volatility']
-    },
-    recommendation: 'Hold'
+      rndInvestment: 2000,
+      patentCount: 800,
+      marketShare: 15,
+      revenueGrowth: 35,
+      aiAdoption: 0.75
+    }
   },
   {
     symbol: 'AI',
     name: 'C3.ai',
-    currentPrice: '28.45',
-    marketCap: '3.2',
-    peRatio: 'N/A',
-    yearHigh: '32.50',
-    yearLow: '10.20',
-    volume: '15000000',
+    price: 28.45,
+    previousClose: 28.10,
+    marketCap: 3.2e9,
+    peRatio: 0,
+    yearHigh: 32.50,
+    yearLow: 10.20,
+    volume: 15000000,
+    aiScore: 8.3,
+    growthScore: 7.5,
+    riskScore: 6.5,
+    recommendation: 'Hold',
+    predictedPrice: 35.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '1500',
-      patentCount: '500',
-      marketShare: '8',
-      revenueGrowth: '20',
-      aiAdoption: '0.70'
-    },
-    analysis: {
-      strengths: ['Enterprise AI focus', 'Strong partnerships', 'Industry expertise'],
-      weaknesses: ['Small market cap', 'High cash burn', 'Limited profitability'],
-      opportunities: ['AI adoption growth', 'New industries', 'Partnership expansion'],
-      threats: ['Competition', 'Market volatility', 'Funding needs']
-    },
-    recommendation: 'Hold'
+      rndInvestment: 1500,
+      patentCount: 500,
+      marketShare: 8,
+      revenueGrowth: 20,
+      aiAdoption: 0.70
+    }
   },
   {
     symbol: 'CRM',
     name: 'Salesforce',
-    currentPrice: '298.75',
-    marketCap: '290',
-    peRatio: '45.8',
-    yearHigh: '310.00',
-    yearLow: '126.34',
-    volume: '12000000',
+    price: 298.75,
+    previousClose: 295.50,
+    marketCap: 2.9e11,
+    peRatio: 45.8,
+    yearHigh: 310.00,
+    yearLow: 126.34,
+    volume: 12000000,
+    aiScore: 8.7,
+    growthScore: 7.9,
+    riskScore: 4.3,
+    recommendation: 'Buy',
+    predictedPrice: 350.00,
+    historicalPrices: [],
     aiMetrics: {
-      rndInvestment: '18000',
-      patentCount: '2500',
-      marketShare: '40',
-      revenueGrowth: '18',
-      aiAdoption: '0.82'
-    },
-    analysis: {
-      strengths: ['Cloud leadership', 'AI integration', 'Strong ecosystem'],
-      weaknesses: ['High valuation', 'Integration challenges', 'Competition'],
-      opportunities: ['AI services', 'Enterprise growth', 'New markets'],
-      threats: ['Market saturation', 'Competition', 'Economic slowdown']
-    },
-    recommendation: 'Buy'
+      rndInvestment: 18000,
+      patentCount: 2500,
+      marketShare: 40,
+      revenueGrowth: 18,
+      aiAdoption: 0.82
+    }
   }
 ];
 
@@ -365,25 +365,26 @@ export const stockService = {
   processStockData(symbol: string, data: any): StockData {
     return {
       symbol,
-      name: data.name || symbol,
-      price: parseFloat(data.currentPrice) || 0,
-      marketCap: parseFloat(data.marketCap) * 1e9 || 0,
-      peRatio: parseFloat(data.peRatio) || 0,
-      yearHigh: parseFloat(data.yearHigh) || 0,
-      yearLow: parseFloat(data.yearLow) || 0,
-      volume: parseInt(data.volume) || 0,
+      name: data.name,
+      price: Number(data.currentPrice),
+      previousClose: Number(data.currentPrice) * 0.99,
+      marketCap: Number(data.marketCap) * 1e9,
+      peRatio: Number(data.peRatio) || 0,
+      yearHigh: Number(data.yearHigh),
+      yearLow: Number(data.yearLow),
+      volume: Number(data.volume),
       aiScore: this.calculateAIScore(data.aiMetrics),
       growthScore: this.calculateGrowthScore(data.aiMetrics),
       riskScore: this.calculateRiskScore(data),
-      recommendation: data.recommendation || 'Hold',
+      recommendation: data.recommendation,
       predictedPrice: this.calculatePricePrediction(data),
       historicalPrices: [],
       aiMetrics: {
-        rndInvestment: parseFloat(data.aiMetrics?.rndInvestment) || 0,
-        patentCount: parseInt(data.aiMetrics?.patentCount) || 0,
-        marketShare: parseFloat(data.aiMetrics?.marketShare) || 0,
-        revenueGrowth: parseFloat(data.aiMetrics?.revenueGrowth) || 0,
-        aiAdoption: parseFloat(data.aiMetrics?.aiAdoption) || 0.5
+        rndInvestment: Number(data.aiMetrics.rndInvestment),
+        patentCount: Number(data.aiMetrics.patentCount),
+        marketShare: Number(data.aiMetrics.marketShare),
+        revenueGrowth: Number(data.aiMetrics.revenueGrowth),
+        aiAdoption: Number(data.aiMetrics.aiAdoption)
       }
     };
   },
@@ -438,4 +439,10 @@ export const stockService = {
     
     return currentPrice * (1 + (growth / 100));
   }
+};
+
+export const getTopAIStocks = async (): Promise<StockData[]> => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return MOCK_STOCKS;
 }; 
