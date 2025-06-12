@@ -1,128 +1,361 @@
-import OpenAI from 'openai';
 import { StockData, StockAnalysis } from '../types/stock';
 
-console.log('API Key available:', !!process.env.REACT_APP_OPENAI_API_KEY);
-
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
-
-// Top 10 AI-focused companies to analyze
-const AI_STOCKS = [
-  'NVDA',  // NVIDIA
-  'GOOGL', // Alphabet
-  'MSFT',  // Microsoft
-  'AMD',   // AMD
-  'AI',    // C3.ai
-  'PLTR',  // Palantir
-  'META',  // Meta
-  'CRM',   // Salesforce
-  'TSLA',  // Tesla
-  'IBM'    // IBM
+// Mock data for AI stocks
+const MOCK_STOCKS = [
+  {
+    symbol: 'NVDA',
+    name: 'NVIDIA Corporation',
+    currentPrice: '850.02',
+    marketCap: '2100',
+    peRatio: '75.5',
+    yearHigh: '974.00',
+    yearLow: '378.80',
+    volume: '50000000',
+    aiMetrics: {
+      rndInvestment: '8000',
+      patentCount: '2000',
+      marketShare: '85',
+      revenueGrowth: '265',
+      aiAdoption: '0.95'
+    },
+    analysis: {
+      strengths: ['Market leader in AI chips', 'Strong R&D pipeline', 'High demand for AI solutions'],
+      weaknesses: ['High valuation', 'Supply chain constraints', 'Competition from AMD'],
+      opportunities: ['AI boom', 'Cloud computing growth', 'Autonomous vehicles'],
+      threats: ['Geopolitical risks', 'Market volatility', 'Regulatory challenges']
+    },
+    recommendation: 'Strong Buy'
+  },
+  {
+    symbol: 'MSFT',
+    name: 'Microsoft Corporation',
+    currentPrice: '415.32',
+    marketCap: '3100',
+    peRatio: '35.8',
+    yearHigh: '420.82',
+    yearLow: '275.37',
+    volume: '25000000',
+    aiMetrics: {
+      rndInvestment: '25000',
+      patentCount: '5000',
+      marketShare: '75',
+      revenueGrowth: '15',
+      aiAdoption: '0.90'
+    },
+    analysis: {
+      strengths: ['Cloud leadership', 'Strong AI integration', 'Diverse product portfolio'],
+      weaknesses: ['Slower growth in some segments', 'High competition', 'Regulatory scrutiny'],
+      opportunities: ['AI services growth', 'Enterprise cloud adoption', 'Gaming expansion'],
+      threats: ['Cloud competition', 'Economic slowdown', 'Privacy regulations']
+    },
+    recommendation: 'Buy'
+  },
+  {
+    symbol: 'GOOGL',
+    name: 'Alphabet Inc.',
+    currentPrice: '142.56',
+    marketCap: '1800',
+    peRatio: '24.5',
+    yearHigh: '155.20',
+    yearLow: '115.00',
+    volume: '30000000',
+    aiMetrics: {
+      rndInvestment: '30000',
+      patentCount: '4000',
+      marketShare: '70',
+      revenueGrowth: '12',
+      aiAdoption: '0.85'
+    },
+    analysis: {
+      strengths: ['AI leadership', 'Strong ad revenue', 'Cloud growth'],
+      weaknesses: ['Regulatory challenges', 'Privacy concerns', 'Competition in AI'],
+      opportunities: ['AI services', 'Cloud expansion', 'New AI products'],
+      threats: ['Regulatory pressure', 'Ad market slowdown', 'AI competition']
+    },
+    recommendation: 'Buy'
+  },
+  {
+    symbol: 'AMD',
+    name: 'Advanced Micro Devices',
+    currentPrice: '178.72',
+    marketCap: '288',
+    peRatio: '45.2',
+    yearHigh: '184.92',
+    yearLow: '60.05',
+    volume: '45000000',
+    aiMetrics: {
+      rndInvestment: '5000',
+      patentCount: '1500',
+      marketShare: '25',
+      revenueGrowth: '45',
+      aiAdoption: '0.80'
+    },
+    analysis: {
+      strengths: ['Strong product portfolio', 'Competitive pricing', 'Growing market share'],
+      weaknesses: ['Smaller R&D budget', 'Supply chain dependency', 'Lower margins'],
+      opportunities: ['AI chip market', 'Data center growth', 'Gaming expansion'],
+      threats: ['NVIDIA competition', 'Market volatility', 'Supply chain risks']
+    },
+    recommendation: 'Buy'
+  },
+  {
+    symbol: 'META',
+    name: 'Meta Platforms',
+    currentPrice: '485.58',
+    marketCap: '1250',
+    peRatio: '32.4',
+    yearHigh: '490.00',
+    yearLow: '88.09',
+    volume: '20000000',
+    aiMetrics: {
+      rndInvestment: '35000',
+      patentCount: '3000',
+      marketShare: '65',
+      revenueGrowth: '25',
+      aiAdoption: '0.88'
+    },
+    analysis: {
+      strengths: ['AI research leadership', 'Strong ad platform', 'Metaverse potential'],
+      weaknesses: ['Privacy concerns', 'Regulatory scrutiny', 'High R&D costs'],
+      opportunities: ['AI integration', 'Metaverse development', 'Business solutions'],
+      threats: ['Regulatory pressure', 'Competition', 'Privacy regulations']
+    },
+    recommendation: 'Buy'
+  },
+  {
+    symbol: 'PLTR',
+    name: 'Palantir Technologies',
+    currentPrice: '24.56',
+    marketCap: '52',
+    peRatio: 'N/A',
+    yearHigh: '27.50',
+    yearLow: '7.50',
+    volume: '35000000',
+    aiMetrics: {
+      rndInvestment: '2000',
+      patentCount: '800',
+      marketShare: '15',
+      revenueGrowth: '35',
+      aiAdoption: '0.75'
+    },
+    analysis: {
+      strengths: ['AI/ML expertise', 'Government contracts', 'Data analytics leadership'],
+      weaknesses: ['High valuation', 'Customer concentration', 'Profitability concerns'],
+      opportunities: ['AI platform growth', 'Commercial expansion', 'New markets'],
+      threats: ['Competition', 'Contract risks', 'Market volatility']
+    },
+    recommendation: 'Hold'
+  },
+  {
+    symbol: 'AI',
+    name: 'C3.ai',
+    currentPrice: '28.45',
+    marketCap: '3.2',
+    peRatio: 'N/A',
+    yearHigh: '32.50',
+    yearLow: '10.20',
+    volume: '15000000',
+    aiMetrics: {
+      rndInvestment: '1500',
+      patentCount: '500',
+      marketShare: '8',
+      revenueGrowth: '20',
+      aiAdoption: '0.70'
+    },
+    analysis: {
+      strengths: ['Enterprise AI focus', 'Strong partnerships', 'Industry expertise'],
+      weaknesses: ['Small market cap', 'High cash burn', 'Limited profitability'],
+      opportunities: ['AI adoption growth', 'New industries', 'Partnership expansion'],
+      threats: ['Competition', 'Market volatility', 'Funding needs']
+    },
+    recommendation: 'Hold'
+  },
+  {
+    symbol: 'CRM',
+    name: 'Salesforce',
+    currentPrice: '298.75',
+    marketCap: '290',
+    peRatio: '45.8',
+    yearHigh: '310.00',
+    yearLow: '126.34',
+    volume: '12000000',
+    aiMetrics: {
+      rndInvestment: '18000',
+      patentCount: '2500',
+      marketShare: '40',
+      revenueGrowth: '18',
+      aiAdoption: '0.82'
+    },
+    analysis: {
+      strengths: ['Cloud leadership', 'AI integration', 'Strong ecosystem'],
+      weaknesses: ['High valuation', 'Integration challenges', 'Competition'],
+      opportunities: ['AI services', 'Enterprise growth', 'New markets'],
+      threats: ['Market saturation', 'Competition', 'Economic slowdown']
+    },
+    recommendation: 'Buy'
+  }
 ];
+
+// Mock analysis data
+const MOCK_ANALYSIS = {
+  NVDA: {
+    technicalIndicators: {
+      rsi: 65,
+      macd: 12.5,
+      movingAverage50: 820.5,
+      movingAverage200: 650.2
+    },
+    sentimentScore: 85,
+    buyingOpportunity: 'Strong Buy',
+    riskLevel: 'Medium',
+    priceTargets: {
+      low: 750,
+      medium: 900,
+      high: 1100
+    }
+  },
+  MSFT: {
+    technicalIndicators: {
+      rsi: 58,
+      macd: 8.2,
+      movingAverage50: 400.5,
+      movingAverage200: 350.2
+    },
+    sentimentScore: 75,
+    buyingOpportunity: 'Buy',
+    riskLevel: 'Low',
+    priceTargets: {
+      low: 380,
+      medium: 450,
+      high: 500
+    }
+  },
+  GOOGL: {
+    technicalIndicators: {
+      rsi: 52,
+      macd: 5.5,
+      movingAverage50: 140.5,
+      movingAverage200: 130.2
+    },
+    sentimentScore: 70,
+    buyingOpportunity: 'Buy',
+    riskLevel: 'Low',
+    priceTargets: {
+      low: 130,
+      medium: 160,
+      high: 180
+    }
+  },
+  AMD: {
+    technicalIndicators: {
+      rsi: 62,
+      macd: 7.8,
+      movingAverage50: 170.5,
+      movingAverage200: 120.2
+    },
+    sentimentScore: 75,
+    buyingOpportunity: 'Buy',
+    riskLevel: 'Medium',
+    priceTargets: {
+      low: 150,
+      medium: 200,
+      high: 250
+    }
+  },
+  META: {
+    technicalIndicators: {
+      rsi: 68,
+      macd: 15.2,
+      movingAverage50: 450.5,
+      movingAverage200: 300.2
+    },
+    sentimentScore: 80,
+    buyingOpportunity: 'Strong Buy',
+    riskLevel: 'Medium',
+    priceTargets: {
+      low: 400,
+      medium: 550,
+      high: 600
+    }
+  },
+  PLTR: {
+    technicalIndicators: {
+      rsi: 45,
+      macd: -2.5,
+      movingAverage50: 25.5,
+      movingAverage200: 20.2
+    },
+    sentimentScore: 55,
+    buyingOpportunity: 'Hold',
+    riskLevel: 'High',
+    priceTargets: {
+      low: 20,
+      medium: 30,
+      high: 40
+    }
+  },
+  AI: {
+    technicalIndicators: {
+      rsi: 48,
+      macd: -1.5,
+      movingAverage50: 28.5,
+      movingAverage200: 22.2
+    },
+    sentimentScore: 50,
+    buyingOpportunity: 'Hold',
+    riskLevel: 'High',
+    priceTargets: {
+      low: 25,
+      medium: 35,
+      high: 45
+    }
+  },
+  CRM: {
+    technicalIndicators: {
+      rsi: 55,
+      macd: 4.2,
+      movingAverage50: 290.5,
+      movingAverage200: 250.2
+    },
+    sentimentScore: 65,
+    buyingOpportunity: 'Buy',
+    riskLevel: 'Low',
+    priceTargets: {
+      low: 280,
+      medium: 320,
+      high: 350
+    }
+  }
+};
 
 export const stockService = {
   async getTopAIStocks(): Promise<StockData[]> {
     try {
-      const stocksData = await Promise.all(
-        AI_STOCKS.map(async (symbol) => {
-          const analysis = await this.getAIAnalysis(symbol);
-          return this.processStockData(symbol, analysis);
-        })
-      );
-      return stocksData;
+      return MOCK_STOCKS.map(stock => this.processStockData(stock.symbol, stock));
     } catch (error) {
       console.error('Error fetching stock data:', error);
       throw error;
     }
   },
 
-  async getAIAnalysis(symbol: string): Promise<any> {
-    try {
-      const prompt = `Analyze the AI company ${symbol} and provide the following information in JSON format:
-      {
-        "name": "Full company name",
-        "currentPrice": "Approximate current stock price",
-        "marketCap": "Approximate market cap in billions",
-        "peRatio": "Approximate P/E ratio",
-        "yearHigh": "52-week high price",
-        "yearLow": "52-week low price",
-        "volume": "Average daily volume",
-        "aiMetrics": {
-          "rndInvestment": "Approximate R&D investment in millions",
-          "patentCount": "Number of AI-related patents",
-          "marketShare": "AI market share percentage",
-          "revenueGrowth": "YoY revenue growth percentage",
-          "aiAdoption": "AI adoption score (0-1)"
-        },
-        "analysis": {
-          "strengths": ["List of key strengths"],
-          "weaknesses": ["List of key weaknesses"],
-          "opportunities": ["List of opportunities"],
-          "threats": ["List of threats"]
-        },
-        "recommendation": "Buy/Hold/Sell recommendation with brief explanation"
-      }`;
-
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "You are a financial analyst specializing in AI companies. Provide detailed, accurate analysis based on public information and market trends."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        model: "gpt-4-turbo-preview",
-      });
-
-      const response = completion.choices[0]?.message?.content;
-      return response ? JSON.parse(response) : null;
-    } catch (error) {
-      console.error(`Error analyzing stock ${symbol}:`, error);
-      throw error;
-    }
-  },
-
   async getStockAnalysis(symbol: string): Promise<StockAnalysis> {
     try {
-      const prompt = `Provide a detailed technical and fundamental analysis for ${symbol} in JSON format:
-      {
-        "technicalIndicators": {
-          "rsi": "Relative Strength Index value",
-          "macd": "MACD value",
-          "movingAverage50": "50-day moving average",
-          "movingAverage200": "200-day moving average"
+      return MOCK_ANALYSIS[symbol as keyof typeof MOCK_ANALYSIS] || {
+        technicalIndicators: {
+          rsi: 50,
+          macd: 0,
+          movingAverage50: 0,
+          movingAverage200: 0
         },
-        "sentimentScore": "Market sentiment score (0-100)",
-        "buyingOpportunity": "Strong Buy/Buy/Hold/Sell/Strong Sell",
-        "riskLevel": "Low/Medium/High",
-        "priceTargets": {
-          "low": "Conservative price target",
-          "medium": "Average price target",
-          "high": "Optimistic price target"
+        sentimentScore: 50,
+        buyingOpportunity: 'Hold',
+        riskLevel: 'Medium',
+        priceTargets: {
+          low: 0,
+          medium: 0,
+          high: 0
         }
-      }`;
-
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "You are a technical analyst specializing in AI companies. Provide detailed technical analysis based on current market conditions."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        model: "gpt-4-turbo-preview",
-      });
-
-      const response = completion.choices[0]?.message?.content;
-      return response ? JSON.parse(response) : null;
+      };
     } catch (error) {
       console.error('Error fetching stock analysis:', error);
       throw error;
@@ -183,22 +416,17 @@ export const stockService = {
 
   calculateGrowthScore(metrics: any): number {
     if (!metrics) return 5;
-    
     return Math.min(Math.max(metrics.revenueGrowth / 10, 0), 10);
   },
 
   calculateRiskScore(data: any): number {
-    // Calculate risk score based on market volatility, competition, and market position
-    const baseRisk = 5; // Medium risk
+    const baseRisk = 5;
     if (!data || !data.analysis) return baseRisk;
 
     const threats = data.analysis.threats.length;
     const strengths = data.analysis.strengths.length;
     
-    // Adjust risk based on SWOT analysis
     let riskScore = baseRisk + (threats * 0.5) - (strengths * 0.3);
-    
-    // Ensure risk score stays within 0-10 range
     return Math.min(Math.max(riskScore, 0), 10);
   },
 
@@ -208,7 +436,6 @@ export const stockService = {
     const currentPrice = parseFloat(data.currentPrice);
     const growth = data.aiMetrics?.revenueGrowth || 0;
     
-    // Simple prediction model based on current price and growth
     return currentPrice * (1 + (growth / 100));
   }
 }; 
