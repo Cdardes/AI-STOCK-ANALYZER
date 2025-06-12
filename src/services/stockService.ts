@@ -1,8 +1,12 @@
-import axios from 'axios';
+import OpenAI from 'openai';
 import { StockData, StockAnalysis } from '../types/stock';
 
-const API_KEY = process.env.REACT_APP_STOCK_API_KEY;
-const BASE_URL = 'https://www.alphavantage.co/query';
+console.log('API Key available:', !!process.env.REACT_APP_OPENAI_API_KEY);
+
+const openai = new OpenAI({
+  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 // Top 10 AI-focused companies to analyze
 const AI_STOCKS = [
@@ -18,92 +22,13 @@ const AI_STOCKS = [
   'IBM'    // IBM
 ];
 
-interface AlphaVantageQuote {
-  '05. price': string;
-  '06. volume': string;
-  '52WeekHigh': string;
-  '52WeekLow': string;
-}
-
-interface AlphaVantageOverview {
-  Name: string;
-  MarketCapitalization: string;
-  PERatio: string;
-  Beta: string;
-  QuarterlyRevenueGrowthYOY: string;
-  QuarterlyEarningsGrowthYOY: string;
-  ProfitMargin: string;
-  DebtToEquityRatio: string;
-  RAndDExpense: string;
-}
-
-interface AlphaVantageTimeSeriesData {
-  '4. close': string;
-  '5. volume': string;
-}
-
-interface AlphaVantageRSI {
-  'Technical Analysis: RSI': {
-    [key: string]: {
-      RSI: string;
-    };
-  };
-}
-
-interface AlphaVantageMACD {
-  'Technical Analysis: MACD': {
-    [key: string]: {
-      MACD: string;
-      'MACD_Signal': string;
-    };
-  };
-}
-
-interface AlphaVantageSMA {
-  'Technical Analysis: SMA': {
-    [key: string]: {
-      SMA: string;
-    };
-  };
-}
-
 export const stockService = {
   async getTopAIStocks(): Promise<StockData[]> {
     try {
       const stocksData = await Promise.all(
         AI_STOCKS.map(async (symbol) => {
-          // Get overview data
-          const overviewResponse = await axios.get<AlphaVantageOverview>(
-            `${BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${API_KEY}`
-          );
-
-          // Get quote data
-          const quoteResponse = await axios.get<{ 'Global Quote': AlphaVantageQuote }>(
-            `${BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`
-          );
-
-          // Get weekly time series for historical data
-          const timeSeriesResponse = await axios.get<{ 'Weekly Time Series': Record<string, AlphaVantageTimeSeriesData> }>(
-            `${BASE_URL}?function=TIME_SERIES_WEEKLY&symbol=${symbol}&apikey=${API_KEY}`
-          );
-
-          const overview = overviewResponse.data;
-          const quote = quoteResponse.data['Global Quote'];
-          const timeSeries = timeSeriesResponse.data['Weekly Time Series'];
-
-          // Convert time series to historical prices array
-          const historicalPrices = Object.entries(timeSeries || {}).slice(0, 52).map(([date, data]) => ({
-            date,
-            price: parseFloat(data['4. close']),
-            volume: parseInt(data['5. volume'])
-          }));
-
-          return this.processStockData({
-            symbol,
-            overview,
-            quote,
-            historicalPrices
-          });
+          const analysis = await this.getAIAnalysis(symbol);
+          return this.processStockData(symbol, analysis);
         })
       );
       return stocksData;
@@ -113,203 +38,177 @@ export const stockService = {
     }
   },
 
+  async getAIAnalysis(symbol: string): Promise<any> {
+    try {
+      const prompt = `Analyze the AI company ${symbol} and provide the following information in JSON format:
+      {
+        "name": "Full company name",
+        "currentPrice": "Approximate current stock price",
+        "marketCap": "Approximate market cap in billions",
+        "peRatio": "Approximate P/E ratio",
+        "yearHigh": "52-week high price",
+        "yearLow": "52-week low price",
+        "volume": "Average daily volume",
+        "aiMetrics": {
+          "rndInvestment": "Approximate R&D investment in millions",
+          "patentCount": "Number of AI-related patents",
+          "marketShare": "AI market share percentage",
+          "revenueGrowth": "YoY revenue growth percentage",
+          "aiAdoption": "AI adoption score (0-1)"
+        },
+        "analysis": {
+          "strengths": ["List of key strengths"],
+          "weaknesses": ["List of key weaknesses"],
+          "opportunities": ["List of opportunities"],
+          "threats": ["List of threats"]
+        },
+        "recommendation": "Buy/Hold/Sell recommendation with brief explanation"
+      }`;
+
+      const completion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are a financial analyst specializing in AI companies. Provide detailed, accurate analysis based on public information and market trends."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        model: "gpt-4-turbo-preview",
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      return response ? JSON.parse(response) : null;
+    } catch (error) {
+      console.error(`Error analyzing stock ${symbol}:`, error);
+      throw error;
+    }
+  },
+
   async getStockAnalysis(symbol: string): Promise<StockAnalysis> {
     try {
-      // Get technical indicators
-      const rsiResponse = await axios.get<AlphaVantageRSI>(
-        `${BASE_URL}?function=RSI&symbol=${symbol}&interval=daily&time_period=14&series_type=close&apikey=${API_KEY}`
-      );
+      const prompt = `Provide a detailed technical and fundamental analysis for ${symbol} in JSON format:
+      {
+        "technicalIndicators": {
+          "rsi": "Relative Strength Index value",
+          "macd": "MACD value",
+          "movingAverage50": "50-day moving average",
+          "movingAverage200": "200-day moving average"
+        },
+        "sentimentScore": "Market sentiment score (0-100)",
+        "buyingOpportunity": "Strong Buy/Buy/Hold/Sell/Strong Sell",
+        "riskLevel": "Low/Medium/High",
+        "priceTargets": {
+          "low": "Conservative price target",
+          "medium": "Average price target",
+          "high": "Optimistic price target"
+        }
+      }`;
 
-      const macdResponse = await axios.get<AlphaVantageMACD>(
-        `${BASE_URL}?function=MACD&symbol=${symbol}&interval=daily&series_type=close&apikey=${API_KEY}`
-      );
+      const completion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are a technical analyst specializing in AI companies. Provide detailed technical analysis based on current market conditions."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        model: "gpt-4-turbo-preview",
+      });
 
-      const smaResponse = await axios.get<AlphaVantageSMA>(
-        `${BASE_URL}?function=SMA&symbol=${symbol}&interval=daily&time_period=50&series_type=close&apikey=${API_KEY}`
-      );
-
-      const data = {
-        rsi: rsiResponse.data,
-        macd: macdResponse.data,
-        sma: smaResponse.data
-      };
-
-      return this.processAnalysisData(data);
+      const response = completion.choices[0]?.message?.content;
+      return response ? JSON.parse(response) : null;
     } catch (error) {
       console.error('Error fetching stock analysis:', error);
       throw error;
     }
   },
 
-  processStockData(data: { symbol: string; overview: AlphaVantageOverview; quote: AlphaVantageQuote; historicalPrices: any[] }): StockData {
-    const { quote, overview } = data;
-    
+  processStockData(symbol: string, data: any): StockData {
     return {
-      symbol: data.symbol,
-      name: overview.Name || data.symbol,
-      price: parseFloat(quote['05. price']) || 0,
-      marketCap: parseFloat(overview.MarketCapitalization) || 0,
-      peRatio: parseFloat(overview.PERatio) || 0,
-      yearHigh: parseFloat(quote['52WeekHigh']) || 0,
-      yearLow: parseFloat(quote['52WeekLow']) || 0,
-      volume: parseInt(quote['06. volume']) || 0,
-      aiScore: this.calculateAIScore({
-        rndInvestment: parseFloat(overview.RAndDExpense) || 0,
-        marketCap: parseFloat(overview.MarketCapitalization) || 0,
-        revenueGrowth: parseFloat(overview.QuarterlyRevenueGrowthYOY) || 0
-      }),
-      growthScore: this.calculateGrowthScore({
-        revenueGrowth: parseFloat(overview.QuarterlyRevenueGrowthYOY) || 0,
-        earningsGrowth: parseFloat(overview.QuarterlyEarningsGrowthYOY) || 0,
-        profitMargin: parseFloat(overview.ProfitMargin) || 0
-      }),
-      riskScore: this.calculateRiskScore({
-        beta: parseFloat(overview.Beta) || 1,
-        volatility: 0.5, // Default value as Alpha Vantage doesn't provide this directly
-        debtToEquity: parseFloat(overview.DebtToEquityRatio) || 0
-      }),
-      recommendation: 'Loading...',
-      predictedPrice: 0,
-      historicalPrices: data.historicalPrices || [],
+      symbol,
+      name: data.name || symbol,
+      price: parseFloat(data.currentPrice) || 0,
+      marketCap: parseFloat(data.marketCap) * 1e9 || 0,
+      peRatio: parseFloat(data.peRatio) || 0,
+      yearHigh: parseFloat(data.yearHigh) || 0,
+      yearLow: parseFloat(data.yearLow) || 0,
+      volume: parseInt(data.volume) || 0,
+      aiScore: this.calculateAIScore(data.aiMetrics),
+      growthScore: this.calculateGrowthScore(data.aiMetrics),
+      riskScore: this.calculateRiskScore(data),
+      recommendation: data.recommendation || 'Hold',
+      predictedPrice: this.calculatePricePrediction(data),
+      historicalPrices: [],
       aiMetrics: {
-        rndInvestment: parseFloat(overview.RAndDExpense) || 0,
-        patentCount: 0, // Not available in Alpha Vantage
-        marketShare: 0, // Not available in Alpha Vantage
-        revenueGrowth: parseFloat(overview.QuarterlyRevenueGrowthYOY) || 0,
-        aiAdoption: 0.5 // Default value as this is a custom metric
+        rndInvestment: parseFloat(data.aiMetrics?.rndInvestment) || 0,
+        patentCount: parseInt(data.aiMetrics?.patentCount) || 0,
+        marketShare: parseFloat(data.aiMetrics?.marketShare) || 0,
+        revenueGrowth: parseFloat(data.aiMetrics?.revenueGrowth) || 0,
+        aiAdoption: parseFloat(data.aiMetrics?.aiAdoption) || 0.5
       }
     };
   },
 
-  processAnalysisData(data: { rsi: AlphaVantageRSI; macd: AlphaVantageMACD; sma: AlphaVantageSMA }): StockAnalysis {
-    const rsiData = Object.values(data.rsi['Technical Analysis: RSI'] || {})[0] || { RSI: '0' };
-    const macdData = Object.values(data.macd['Technical Analysis: MACD'] || {})[0] || { MACD: '0', MACD_Signal: '0' };
-    const smaData = Object.values(data.sma['Technical Analysis: SMA'] || {})[0] || { SMA: '0' };
-
-    return {
-      technicalIndicators: {
-        rsi: parseFloat(rsiData.RSI) || 0,
-        macd: parseFloat(macdData.MACD) || 0,
-        movingAverage50: parseFloat(smaData.SMA) || 0,
-        movingAverage200: 0 // Would need another API call for 200-day MA
-      },
-      sentimentScore: 50, // Default neutral sentiment as this requires additional data sources
-      buyingOpportunity: this.determineBuyingOpportunity({
-        rsi: parseFloat(rsiData.RSI) || 0,
-        macdSignal: parseFloat(macdData.MACD_Signal) || 0
-      }),
-      riskLevel: 'Medium', // Default value
-      priceTargets: {
-        low: 0,
-        medium: 0,
-        high: 0
-      }
-    };
-  },
-
-  calculateAIScore(data: { rndInvestment: number; marketCap: number; revenueGrowth: number }): number {
+  calculateAIScore(metrics: any): number {
+    if (!metrics) return 5;
+    
     const weights = {
       rndInvestment: 0.3,
-      marketCap: 0.2,
-      revenueGrowth: 0.5
+      patentCount: 0.2,
+      marketShare: 0.2,
+      revenueGrowth: 0.2,
+      aiAdoption: 0.1
     };
 
-    const normalizedRnD = Math.min(data.rndInvestment / 1e9, 1);
-    const normalizedMarketCap = Math.min(data.marketCap / 1e12, 1);
-    const normalizedGrowth = Math.min(Math.max(data.revenueGrowth, 0) / 100, 1);
+    const normalizedRnD = Math.min(metrics.rndInvestment / 10000, 1);
+    const normalizedPatents = Math.min(metrics.patentCount / 1000, 1);
+    const normalizedMarketShare = Math.min(metrics.marketShare / 100, 1);
+    const normalizedGrowth = Math.min(Math.max(metrics.revenueGrowth, 0) / 100, 1);
+    const normalizedAdoption = metrics.aiAdoption;
 
     return (
       normalizedRnD * weights.rndInvestment +
-      normalizedMarketCap * weights.marketCap +
-      normalizedGrowth * weights.revenueGrowth
+      normalizedPatents * weights.patentCount +
+      normalizedMarketShare * weights.marketShare +
+      normalizedGrowth * weights.revenueGrowth +
+      normalizedAdoption * weights.aiAdoption
     ) * 10;
   },
 
-  calculateGrowthScore(data: { revenueGrowth: number; earningsGrowth: number; profitMargin: number }): number {
-    const weights = {
-      revenueGrowth: 0.4,
-      earningsGrowth: 0.4,
-      profitMargin: 0.2
-    };
-
-    const normalizedRevenueGrowth = Math.min(Math.max(data.revenueGrowth, 0) / 100, 1);
-    const normalizedEarningsGrowth = Math.min(Math.max(data.earningsGrowth, 0) / 100, 1);
-    const normalizedProfitMargin = Math.min(Math.max(data.profitMargin, 0), 1);
-
-    return (
-      normalizedRevenueGrowth * weights.revenueGrowth +
-      normalizedEarningsGrowth * weights.earningsGrowth +
-      normalizedProfitMargin * weights.profitMargin
-    ) * 10;
-  },
-
-  calculateRiskScore(data: { beta: number; volatility: number; debtToEquity: number }): number {
-    const weights = {
-      beta: 0.4,
-      volatility: 0.3,
-      debtToEquity: 0.3
-    };
-
-    const normalizedBeta = Math.min(Math.abs(data.beta), 2) / 2;
-    const normalizedVolatility = Math.min(data.volatility, 1);
-    const normalizedDebtToEquity = Math.min(data.debtToEquity / 2, 1);
-
-    return (
-      normalizedBeta * weights.beta +
-      normalizedVolatility * weights.volatility +
-      normalizedDebtToEquity * weights.debtToEquity
-    ) * 10;
-  },
-
-  generateRecommendation(data: any): string {
-    const aiScore = this.calculateAIScore(data);
-    const growthScore = this.calculateGrowthScore(data);
-    const riskScore = this.calculateRiskScore(data);
+  calculateGrowthScore(metrics: any): number {
+    if (!metrics) return 5;
     
-    if (aiScore > 8 && growthScore > 7 && riskScore < 5) {
-      return 'Strong Buy';
-    } else if (aiScore > 6 && growthScore > 5 && riskScore < 7) {
-      return 'Buy';
-    } else if (aiScore > 4 && growthScore > 3 && riskScore < 8) {
-      return 'Hold';
-    } else {
-      return 'Watch';
-    }
+    return Math.min(Math.max(metrics.revenueGrowth / 10, 0), 10);
   },
 
-  calculatePricePrediction(data: { price: number; revenueGrowth: number; peRatio: number }): number {
-    const currentPrice = data.price || 0;
-    const growthRate = data.revenueGrowth / 100 || 0;
-    const marketMultiple = 15;
+  calculateRiskScore(data: any): number {
+    // Calculate risk score based on market volatility, competition, and market position
+    const baseRisk = 5; // Medium risk
+    if (!data || !data.analysis) return baseRisk;
+
+    const threats = data.analysis.threats.length;
+    const strengths = data.analysis.strengths.length;
     
-    return currentPrice * (1 + growthRate) * (marketMultiple / (data.peRatio || marketMultiple));
+    // Adjust risk based on SWOT analysis
+    let riskScore = baseRisk + (threats * 0.5) - (strengths * 0.3);
+    
+    // Ensure risk score stays within 0-10 range
+    return Math.min(Math.max(riskScore, 0), 10);
   },
 
-  determineBuyingOpportunity(data: { rsi: number; macdSignal: number }): string {
-    const rsi = data.rsi || 0;
-    const macdSignal = data.macdSignal || 0;
+  calculatePricePrediction(data: any): number {
+    if (!data || !data.currentPrice) return 0;
     
-    if (rsi < 30 && macdSignal > 0) {
-      return 'Strong Buy Signal';
-    } else if (rsi < 40 && macdSignal > 0) {
-      return 'Potential Buy Signal';
-    } else if (rsi > 70) {
-      return 'Wait for Pull Back';
-    } else {
-      return 'Monitor';
-    }
-  },
-
-  determineRiskLevel(data: { volatility: number; beta: number }): string {
-    const volatility = data.volatility || 0;
-    const beta = data.beta || 1;
+    const currentPrice = parseFloat(data.currentPrice);
+    const growth = data.aiMetrics?.revenueGrowth || 0;
     
-    if (volatility > 0.4 || beta > 2) {
-      return 'High';
-    } else if (volatility > 0.2 || beta > 1.5) {
-      return 'Medium';
-    } else {
-      return 'Low';
-    }
+    // Simple prediction model based on current price and growth
+    return currentPrice * (1 + (growth / 100));
   }
 }; 

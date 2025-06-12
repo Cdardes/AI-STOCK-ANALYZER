@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Container,
   Grid,
@@ -14,6 +14,8 @@ import {
 import { StockCard } from './components/StockCard';
 import { StockAnalysis } from './components/StockAnalysis';
 import { useStocks } from './hooks/useStocks';
+
+console.log('App component is being loaded');
 
 const theme = createTheme({
   palette: {
@@ -52,7 +54,9 @@ const theme = createTheme({
   },
 });
 
-export const App: React.FC = () => {
+const App: React.FC = () => {
+  console.log('App component rendering');
+
   const {
     stocks,
     loading,
@@ -62,15 +66,22 @@ export const App: React.FC = () => {
     selectStock,
   } = useStocks();
 
+  useEffect(() => {
+    console.log('App mounted');
+    console.log('Current state:', { stocks, loading, error, selectedStock });
+  }, [stocks, loading, error, selectedStock]);
+
+  console.log('Rendering with state:', { stocks, loading, error, selectedStock });
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box mb={4}>
-          <Typography variant="h1" gutterBottom align="center">
+        <Box mb={4} sx={{ color: 'white' }}>
+          <Typography variant="h1" gutterBottom align="center" sx={{ color: 'white' }}>
             AI Stock Analyzer
           </Typography>
-          <Typography variant="h5" align="center" color="textSecondary" gutterBottom>
+          <Typography variant="h5" align="center" sx={{ color: 'rgba(255, 255, 255, 0.7)' }} gutterBottom>
             Top 10 AI Companies to Watch in 2025
           </Typography>
         </Box>
@@ -89,14 +100,20 @@ export const App: React.FC = () => {
           <Grid container spacing={4}>
             <Grid item xs={12} md={selectedStock ? 6 : 12}>
               <Grid container spacing={2}>
-                {stocks.map((stock) => (
-                  <Grid item xs={12} sm={selectedStock ? 12 : 6} key={stock.symbol}>
-                    <StockCard
-                      stock={stock}
-                      onClick={() => selectStock(stock.symbol)}
-                    />
+                {Array.isArray(stocks) && stocks.length > 0 ? (
+                  stocks.map((stock) => (
+                    <Grid item xs={12} sm={selectedStock ? 12 : 6} key={stock.symbol}>
+                      <StockCard
+                        stock={stock}
+                        onClick={() => selectStock(stock.symbol)}
+                      />
+                    </Grid>
+                  ))
+                ) : !loading && !error ? (
+                  <Grid item xs={12}>
+                    <Alert severity="info">No stocks data available</Alert>
                   </Grid>
-                ))}
+                ) : null}
               </Grid>
             </Grid>
 
@@ -123,4 +140,6 @@ export const App: React.FC = () => {
       </Container>
     </ThemeProvider>
   );
-}; 
+};
+
+export default App; 
