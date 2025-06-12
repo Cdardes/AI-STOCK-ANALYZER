@@ -9,17 +9,10 @@ export interface NewsItem {
 }
 
 export interface SocialSentiment {
-  twitter: {
-    sentiment: number;
-    volume: number;
-    trending: boolean;
-  };
-  reddit: {
-    sentiment: number;
-    volume: number;
-    trending: boolean;
-  };
-  overall: number;
+  platform: string;
+  sentiment: string;
+  mentions: number;
+  url: string;
 }
 
 export interface Competitor {

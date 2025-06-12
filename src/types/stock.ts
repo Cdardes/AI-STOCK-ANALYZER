@@ -1,20 +1,44 @@
 export interface StockData {
   symbol: string;
   name: string;
+  sector: string;
   price: number;
   previousClose: number;
   marketCap: number;
   peRatio: number;
   yearHigh: number;
   yearLow: number;
-  volume: number;
+  volume: {
+    average: number;
+    current: number;
+    change: number;
+  };
   aiScore: number;  // Custom score based on AI potential
   growthScore: number;  // Growth potential score
   riskScore: number;  // Risk assessment score
   recommendation: string;
   predictedPrice: number;
-  historicalPrices: PricePoint[];
-  aiMetrics: AIMetrics;
+  historicalPrices: number[];
+  aiMetrics: {
+    sentiment: number;
+    momentum: number;
+    volatility: number;
+  };
+  technicalIndicators: {
+    rsi: number;
+    macd: number;
+    sma: number;
+    volume: {
+      average: number;
+      current: number;
+      change: number;
+    };
+    bollingerBands: {
+      upper: number;
+      middle: number;
+      lower: number;
+    };
+  };
 }
 
 export interface PricePoint {

@@ -18,11 +18,13 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartData
+  ChartData,
+  ChartOptions
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { StockData } from '../types/stock';
 
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -98,8 +100,9 @@ export const StockChart: React.FC<StockChartProps> = ({ stocks }) => {
     ]
   };
 
-  const options = {
+  const options: ChartOptions<'bar'> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top' as const,
@@ -169,7 +172,7 @@ export const StockChart: React.FC<StockChartProps> = ({ stocks }) => {
           </FormControl>
         </Grid>
         <Grid item xs={12}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: 400, width: '100%' }}>
             <Bar data={data} options={options} />
           </Box>
         </Grid>
